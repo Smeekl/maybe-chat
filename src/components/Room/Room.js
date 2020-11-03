@@ -1,27 +1,91 @@
-import React from 'react';
-import {Link} from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
+import Paper from "@material-ui/core/Paper";
+import Grid from "@material-ui/core/Grid";
+import TextField from "@material-ui/core/TextField";
+import {
+  createMuiTheme,
+  withStyles,
+  makeStyles,
+  ThemeProvider,
+} from "@material-ui/core/styles";
+import Button from "@material-ui/core/Button";
+import { green, purple } from "@material-ui/core/colors";
 
-import './Room.css';
+import "./Room.css";
+import { ButtonGroup } from "@material-ui/core";
+import Container from "@material-ui/core/Container";
+import CssBaseline from "@material-ui/core/CssBaseline";
+import Avatar from "@material-ui/core/Avatar";
+import Typography from "@material-ui/core/Typography";
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    flexGrow: 1,
+  },
+  paper: {
+    marginTop: theme.spacing(10),
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  avatar: {
+    margin: theme.spacing(1),
+    backgroundColor: theme.palette.secondary.main,
+  },
+  form: {
+    width: "100%", // Fix IE 11 issue.
+    marginTop: theme.spacing(1),
+  },
+  submit: {
+    margin: theme.spacing(3, 0, 2),
+  },
+  margin: {
+    marginTop: theme.spacing(2),
+  },
+}));
 
 const Room = () => {
-    const [roomId, setRoomId] = React.useState('');
+  const classes = useStyles();
 
-    const handleRoomIdChange = (event)=>{
-        setRoomId(event.target.value);
-    };
+  const [roomId, setRoomId] = React.useState("");
 
-    return (<div className="auth-container">
-        <input
-            type="text"
-            placeholder="Room"
-            value={roomId}
-            onChange={handleRoomIdChange}
-            className="text-input-field"
-        />
-        <Link to={`/${roomId}`} className="enter-room-button">
-            Join room
-        </Link>
-    </div>)
-}
+  const handleRoomIdChange = (event) => {
+    setRoomId(event.target.value);
+  };
+
+  const theme = createMuiTheme({
+    palette: {
+      primary: green,
+    },
+  });
+
+  return (
+    <Container component="main" maxWidth="xs">
+      <CssBaseline />
+      <div className={classes.paper}>
+        <Avatar className={classes.avatar}></Avatar>
+        <Typography component="h1" variant="h5">
+          Input room id
+        </Typography>
+        <ThemeProvider theme={theme}>
+          <TextField
+            className={classes.margin}
+            label="Room ID"
+            variant="outlined"
+            id="mui-theme-provider-outlined-input"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            className={classes.margin}
+          >
+            Connect
+          </Button>
+        </ThemeProvider>
+      </div>
+    </Container>
+  );
+};
 
 export default Room;
