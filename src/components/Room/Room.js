@@ -1,11 +1,7 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import Paper from "@material-ui/core/Paper";
-import Grid from "@material-ui/core/Grid";
 import TextField from "@material-ui/core/TextField";
 import {
   createMuiTheme,
-  withStyles,
   makeStyles,
   ThemeProvider,
 } from "@material-ui/core/styles";
@@ -13,7 +9,6 @@ import Button from "@material-ui/core/Button";
 import { green, purple } from "@material-ui/core/colors";
 
 import "./Room.css";
-import { ButtonGroup } from "@material-ui/core";
 import Container from "@material-ui/core/Container";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Avatar from "@material-ui/core/Avatar";

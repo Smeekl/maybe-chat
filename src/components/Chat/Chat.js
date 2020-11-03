@@ -20,6 +20,13 @@ import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import SnackbarContent from "@material-ui/core/SnackbarContent";
 import { Container } from "@material-ui/core";
+import socketIOClient from "socket.io-client";
+import Button from "@material-ui/core/Button";
+import { Send } from "@material-ui/icons";
+import Input from "@material-ui/core/Input";
+
+const ENDPOINT = "http://localhost:3001";
+const socket = socketIOClient(ENDPOINT, { origins: "*:*" });
 
 const drawerWidth = 240;
 
@@ -39,7 +46,6 @@ const useStyles = makeStyles((theme) => ({
   drawerPaper: {
     width: drawerWidth,
   },
-  // necessary for content to be below app bar
   toolbar: theme.mixins.toolbar,
   content: {
     flexGrow: 1,
@@ -52,6 +58,12 @@ const useStyles = makeStyles((theme) => ({
   title: {
     flexGrow: 1,
   },
+  button: {
+    margin: theme.spacing(1),
+  },
+  message: {
+    marginTop: theme.spacing(2),
+  },
 }));
 
 const theme = createMuiTheme({
@@ -62,11 +74,19 @@ const theme = createMuiTheme({
 
 export default function Chat() {
   const classes = useStyles();
+  const serverData = [];
 
-  const [messages, setMessages] = useState(0);
+  const sendClick = (e) => {
+    socket.emit("msgToServer", messages);
+  };
+
+  const [messages, setMessages] = useState("");
 
   useEffect(() => {
-    setMessages(1);
+    socket.on("msgToClient", (message) => {
+      serverData.push(message);
+      console.log(serverData);
+    });
   });
 
   return (
@@ -90,14 +110,30 @@ export default function Chat() {
       <main className={classes.content}>
         <div className={classes.toolbar} />
         <Container>
-          <SnackbarContent
-            className={classes.message}
-            message={
-              "I love candy. I love cookies. I love cupcakes. \
-                I love cheesecake. I love chocolate."
-            }
-          />
+          <List>
+            {serverData.map((text, index) => (
+              <SnackbarContent className={classes.message} message={text} />
+            ))}
+          </List>
         </Container>
+        <form className={classes.root} noValidate autoComplete="off">
+          <Input
+            onChange={(e) => setMessages(e.target.value)}
+            className={classes.textInput}
+            placeholder="Write a message"
+            inputProps={{ "aria-label": "description" }}
+            value={messages}
+          />
+          <Button
+            onClick={sendClick}
+            variant="contained"
+            color="primary"
+            className={classes.button}
+            endIcon={<Send />}
+          >
+            Send
+          </Button>
+        </form>
       </main>
       <Drawer
         className={classes.drawer}
