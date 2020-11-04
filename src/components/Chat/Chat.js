@@ -18,12 +18,13 @@ import { ThemeProvider } from "@material-ui/styles";
 import React, { useState, useEffect } from "react";
 import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
-import SnackbarContent from "@material-ui/core/SnackbarContent";
 import { Container } from "@material-ui/core";
 import socketIOClient from "socket.io-client";
 import Button from "@material-ui/core/Button";
-import { Send } from "@material-ui/icons";
-import Input from "@material-ui/core/Input";
+import Paper from "@material-ui/core/Paper";
+import Grid from "@material-ui/core/Grid";
+import Avatar from "@material-ui/core/Avatar";
+import TextField from "@material-ui/core/TextField";
 
 const ENDPOINT = "http://localhost:3001";
 const socket = socketIOClient(ENDPOINT, { origins: "*:*" });
@@ -35,9 +36,9 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
   },
   appBar: {
-    width: `calc(100%)`,
+    zIndex: theme.zIndex.drawer + 1,
     marginRight: 0,
-    backgroundColor: "black",
+    backgroundColor: "#2c3e50",
   },
   drawer: {
     width: drawerWidth,
@@ -59,14 +60,43 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   button: {
+    color: "black",
     margin: theme.spacing(1),
   },
   message: {
     marginTop: theme.spacing(2),
   },
+  messagePaper: {
+    maxWidth: 600,
+    margin: `5px`,
+    padding: theme.spacing(2),
+  },
+  footer: {
+    width: "70%",
+    position: "fixed",
+    zIndex: 1,
+    top: "90%",
+  },
+  black: {
+    color: "white",
+    fontFamily: theme.typography.fontFamily,
+  },
+  orange: {
+    color: "orange",
+    fontFamily: theme.typography.fontFamily,
+  },
+  textInput: {
+    marginTop: "2px",
+    width: "100%",
+  },
+  userAvatar: {
+    marginRight: "5px",
+  },
 }));
-
 const theme = createMuiTheme({
+  typography: {
+    fontFamily: ["Balsamiq Sans"].join(","),
+  },
   palette: {
     secondary: green,
   },
@@ -74,19 +104,31 @@ const theme = createMuiTheme({
 
 export default function Chat() {
   const classes = useStyles();
-  const serverData = [];
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [usersOnline, setUsersOnline] = useState("");
 
-  const sendClick = (e) => {
-    socket.emit("msgToServer", messages);
+  const handleSendMessage = (e) => {
+    socket.emit("msgToServer", message);
+    socket.emit("getOnlineUsersCount");
   };
 
-  const [messages, setMessages] = useState("");
+  useEffect(() => {
+    if (messages) {
+      socket.on("msgToClient", (payload) => {
+        setMessages([...messages, payload]);
+      });
+    }
+  }, [messages]);
+  console.log(messages);
 
   useEffect(() => {
-    socket.on("msgToClient", (message) => {
-      serverData.push(message);
-      console.log(serverData);
-    });
+    if (usersOnline) {
+      socket.on("getOnlineUsersCount", (payload) => {
+        setUsersOnline(payload);
+      });
+      console.log(usersOnline);
+    }
   });
 
   return (
@@ -103,7 +145,8 @@ export default function Chat() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap>
-            Maybe.Chat
+            <span className={classes.black}>Maybe.</span>
+            <span className={classes.orange}>Chat</span>
           </Typography>
         </Toolbar>
       </AppBar>
@@ -111,29 +154,47 @@ export default function Chat() {
         <div className={classes.toolbar} />
         <Container>
           <List>
-            {serverData.map((text, index) => (
-              <SnackbarContent className={classes.message} message={text} />
+            {messages.map((text, index) => (
+              <Paper
+                direction="column"
+                justify="space-around"
+                alignItems="flex-start"
+                className={classes.messagePaper}
+              >
+                <Grid container wrap="nowrap">
+                  <Grid className={classes.userAvatar}>
+                    <Avatar>W</Avatar>
+                  </Grid>
+                  <Grid item xs>
+                    <Typography>{text}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
             ))}
           </List>
+          <footer className={classes.footer}>
+            <Container maxWidth="sm">
+              <form className={classes.root} noValidate autoComplete="off">
+                <TextField
+                  onChange={(e) => setMessage(e.target.value)}
+                  multiline
+                  className={classes.textInput}
+                  color="secondary"
+                  rowsMax={4}
+                  placeholder="Write a message..."
+                  value={message}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  color="primary"
+                  className={classes.button}
+                >
+                  Send
+                </Button>
+              </form>
+            </Container>
+          </footer>
         </Container>
-        <form className={classes.root} noValidate autoComplete="off">
-          <Input
-            onChange={(e) => setMessages(e.target.value)}
-            className={classes.textInput}
-            placeholder="Write a message"
-            inputProps={{ "aria-label": "description" }}
-            value={messages}
-          />
-          <Button
-            onClick={sendClick}
-            variant="contained"
-            color="primary"
-            className={classes.button}
-            endIcon={<Send />}
-          >
-            Send
-          </Button>
-        </form>
       </main>
       <Drawer
         className={classes.drawer}
@@ -143,14 +204,14 @@ export default function Chat() {
         }}
         anchor="right"
       >
-        <div className={classes.tool} />
+        <div className={classes.toolbar} />
         <Divider />
         <List>
           <ListItem key={"Users Online"}>
             <ListItemIcon>
               <GroupIcon />
             </ListItemIcon>
-            <ListItemText primary={"Users Online"} />
+            <ListItemText primary={"Users Online: " + usersOnline} />
           </ListItem>
         </List>
         <Divider />
