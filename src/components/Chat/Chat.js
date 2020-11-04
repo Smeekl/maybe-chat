@@ -15,7 +15,7 @@ import Badge from "@material-ui/core/Badge";
 import { green } from "@material-ui/core/colors";
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import { ThemeProvider } from "@material-ui/styles";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import { Container } from "@material-ui/core";
@@ -106,29 +106,45 @@ export default function Chat() {
   const classes = useStyles();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [usersOnline, setUsersOnline] = useState("");
+  const [usersOnline, setUsersOnline] = useState(0);
+  const [userInfo, setUserInfo] = useState([]);
 
   const handleSendMessage = (e) => {
-    socket.emit("msgToServer", message);
+    socket.emit("getMessages", message);
     socket.emit("getOnlineUsersCount");
+    socket.emit("getUsersInfo");
   };
+
+  useLayoutEffect(() => {
+    socket.emit("getOnlineUsersCount");
+    socket.on("getOnlineUsersCount", (payload) => {
+      setUsersOnline(payload);
+    });
+
+    socket.emit("getUsersInfo");
+    socket.on("getUsersInfo", (payload) => {
+      setUserInfo(payload);
+    });
+  }, [usersOnline]);
+
+  useEffect(() => {
+    socket.on("getUsersInfo", (payload) => {
+      setUserInfo(payload);
+    });
+  }, [userInfo]);
 
   useEffect(() => {
     if (messages) {
-      socket.on("msgToClient", (payload) => {
-        setMessages([...messages, payload]);
+      socket.on("getMessages", (payload) => {
+        setMessages(payload);
       });
     }
   }, [messages]);
-  console.log(messages);
 
   useEffect(() => {
-    if (usersOnline) {
-      socket.on("getOnlineUsersCount", (payload) => {
-        setUsersOnline(payload);
-      });
-      console.log(usersOnline);
-    }
+    socket.on("getOnlineUsersCount", (payload) => {
+      setUsersOnline(payload);
+    });
   });
 
   return (
@@ -166,7 +182,9 @@ export default function Chat() {
                     <Avatar>W</Avatar>
                   </Grid>
                   <Grid item xs>
-                    <Typography>{text}</Typography>
+                    <Typography style={{ wordBreak: "break-word" }}>
+                      {text}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
@@ -216,7 +234,7 @@ export default function Chat() {
         </List>
         <Divider />
         <List>
-          {["Антон", "Игорь", "Анна", "Сергей"].map((text, index) => (
+          {userInfo.map((text, index) => (
             <ListItem key={text}>
               <ListItemIcon>
                 <ThemeProvider theme={theme}>
