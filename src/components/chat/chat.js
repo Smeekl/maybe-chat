@@ -15,7 +15,7 @@ import Badge from "@material-ui/core/Badge";
 import { green } from "@material-ui/core/colors";
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import { ThemeProvider } from "@material-ui/styles";
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect } from "react";
 import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import { Container } from "@material-ui/core";
@@ -105,7 +105,7 @@ const theme = createMuiTheme({
 export default function Chat() {
   const classes = useStyles();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([Object]);
   const [usersOnline, setUsersOnline] = useState(0);
   const [userInfo, setUserInfo] = useState([]);
 
@@ -116,7 +116,7 @@ export default function Chat() {
     socket.emit("getUsers");
   };
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     socket.emit("getOnlineUsersCount");
     socket.on("getOnlineUsersCount", (payload) => {
       setUsersOnline(payload);
@@ -126,7 +126,12 @@ export default function Chat() {
     socket.on("getUsersInfo", (payload) => {
       setUserInfo(payload);
     });
-  }, [usersOnline]);
+
+    socket.emit("getMessages");
+    socket.on("getMessages", (payload) => {
+      setMessages(payload);
+    });
+  }, []);
 
   useEffect(() => {
     socket.on("getUsersInfo", (payload) => {
@@ -172,25 +177,25 @@ export default function Chat() {
         <div className={classes.toolbar} />
         <Container>
           <List>
-            {/*{messages.map((text, index) => (*/}
-            {/*  <Paper*/}
-            {/*    direction="column"*/}
-            {/*    justify="space-around"*/}
-            {/*    alignItems="flex-start"*/}
-            {/*    className={classes.messagePaper}*/}
-            {/*  >*/}
-            {/*    <Grid container wrap="nowrap">*/}
-            {/*      <Grid className={classes.userAvatar}>*/}
-            {/*        <Avatar>W</Avatar>*/}
-            {/*      </Grid>*/}
-            {/*      <Grid item xs>*/}
-            {/*        <Typography style={{ wordBreak: "break-word" }}>*/}
-            {/*          {text}*/}
-            {/*        </Typography>*/}
-            {/*      </Grid>*/}
-            {/*    </Grid>*/}
-            {/*  </Paper>*/}
-            {/*))}*/}
+            {messages.map((message, index) => (
+              <Paper
+                key={index}
+                direction="column"
+                justify="space-around"
+                className={classes.messagePaper}
+              >
+                <Grid container wrap="nowrap">
+                  <Grid className={classes.userAvatar}>
+                    <Avatar>W</Avatar>
+                  </Grid>
+                  <Grid item xs>
+                    <Typography style={{ wordBreak: "break-word" }}>
+                      {message.message}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            ))}
           </List>
           <footer className={classes.footer}>
             <Container maxWidth="sm">
