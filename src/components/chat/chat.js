@@ -110,9 +110,7 @@ export default function Chat() {
   const [userInfo, setUserInfo] = useState([]);
 
   const handleSendMessage = (e) => {
-    socket.emit("getMessages");
     socket.emit("getOnlineUsersCount");
-    socket.emit("getUsersInfo");
     socket.emit("getUsers");
   };
 
@@ -191,6 +189,9 @@ export default function Chat() {
                   <Grid item xs>
                     <Typography style={{ wordBreak: "break-word" }}>
                       {message.message}
+                    </Typography>
+                    <Typography style={{ wordBreak: "break-word" }}>
+                      {message.createdAt}
                     </Typography>
                   </Grid>
                 </Grid>
