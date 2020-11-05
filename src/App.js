@@ -1,9 +1,9 @@
 import "./index.css";
-import Auth from "./components/Auth/Auth";
+import Auth from "./components/auth/auth";
 import React from "react";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import Room from "./components/Room/Room";
-import Chat from "./components/Chat/Chat";
+import Room from "./components/room/room";
+import Chat from "./components/chat/chat";
 
 function App() {
   return (

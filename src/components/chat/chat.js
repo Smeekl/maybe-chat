@@ -110,9 +110,10 @@ export default function Chat() {
   const [userInfo, setUserInfo] = useState([]);
 
   const handleSendMessage = (e) => {
-    socket.emit("getMessages", message);
+    socket.emit("getMessages");
     socket.emit("getOnlineUsersCount");
     socket.emit("getUsersInfo");
+    socket.emit("getUsers");
   };
 
   useLayoutEffect(() => {
@@ -137,6 +138,7 @@ export default function Chat() {
     if (messages) {
       socket.on("getMessages", (payload) => {
         setMessages(payload);
+        console.log(payload);
       });
     }
   }, [messages]);
@@ -170,25 +172,25 @@ export default function Chat() {
         <div className={classes.toolbar} />
         <Container>
           <List>
-            {messages.map((text, index) => (
-              <Paper
-                direction="column"
-                justify="space-around"
-                alignItems="flex-start"
-                className={classes.messagePaper}
-              >
-                <Grid container wrap="nowrap">
-                  <Grid className={classes.userAvatar}>
-                    <Avatar>W</Avatar>
-                  </Grid>
-                  <Grid item xs>
-                    <Typography style={{ wordBreak: "break-word" }}>
-                      {text}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
-            ))}
+            {/*{messages.map((text, index) => (*/}
+            {/*  <Paper*/}
+            {/*    direction="column"*/}
+            {/*    justify="space-around"*/}
+            {/*    alignItems="flex-start"*/}
+            {/*    className={classes.messagePaper}*/}
+            {/*  >*/}
+            {/*    <Grid container wrap="nowrap">*/}
+            {/*      <Grid className={classes.userAvatar}>*/}
+            {/*        <Avatar>W</Avatar>*/}
+            {/*      </Grid>*/}
+            {/*      <Grid item xs>*/}
+            {/*        <Typography style={{ wordBreak: "break-word" }}>*/}
+            {/*          {text}*/}
+            {/*        </Typography>*/}
+            {/*      </Grid>*/}
+            {/*    </Grid>*/}
+            {/*  </Paper>*/}
+            {/*))}*/}
           </List>
           <footer className={classes.footer}>
             <Container maxWidth="sm">

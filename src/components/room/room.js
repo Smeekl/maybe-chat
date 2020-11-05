@@ -8,7 +8,7 @@ import {
 import Button from "@material-ui/core/Button";
 import { green, purple } from "@material-ui/core/colors";
 
-import "./Room.css";
+import "./room.css";
 import Container from "@material-ui/core/Container";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Avatar from "@material-ui/core/Avatar";
