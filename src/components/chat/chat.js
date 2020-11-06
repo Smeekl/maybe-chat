@@ -25,6 +25,7 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Avatar from "@material-ui/core/Avatar";
 import TextField from "@material-ui/core/TextField";
+import { color } from "@material-ui/system";
 
 const ENDPOINT = "http://localhost:3001";
 const socket = socketIOClient(ENDPOINT, { origins: "*:*" });
@@ -110,8 +111,8 @@ export default function Chat() {
   const [userInfo, setUserInfo] = useState([]);
 
   const handleSendMessage = (e) => {
-    socket.emit("getOnlineUsersCount");
-    socket.emit("getUsers");
+    socket.emit("sendMessage", { userId: 1, message: message });
+    socket.emit("getMessages");
   };
 
   useEffect(() => {
@@ -187,7 +188,10 @@ export default function Chat() {
                     <Avatar>W</Avatar>
                   </Grid>
                   <Grid item xs>
-                    <Typography style={{ wordBreak: "break-word" }}>
+                    <Typography style={{ color: "#" + message.color }}>
+                      {message.nickname}
+                    </Typography>
+                    <Typography style={{ color: "#" + message.color }}>
                       {message.message}
                     </Typography>
                     <Typography style={{ wordBreak: "break-word" }}>
