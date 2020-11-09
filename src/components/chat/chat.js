@@ -25,7 +25,6 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Avatar from "@material-ui/core/Avatar";
 import TextField from "@material-ui/core/TextField";
-import { color } from "@material-ui/system";
 
 const ENDPOINT = "http://localhost:3001";
 const socket = socketIOClient(ENDPOINT, { origins: "*:*" });
@@ -128,6 +127,7 @@ export default function Chat() {
 
     socket.emit("getMessages");
     socket.on("getMessages", (payload) => {
+      console.log(payload);
       setMessages(payload);
     });
   }, []);
@@ -139,12 +139,9 @@ export default function Chat() {
   }, [userInfo]);
 
   useEffect(() => {
-    if (messages) {
-      socket.on("getMessages", (payload) => {
-        setMessages(payload);
-        console.log(payload);
-      });
-    }
+    socket.on("getMessages", (payload) => {
+      setMessages(payload);
+    });
   }, [messages]);
 
   useEffect(() => {
@@ -176,7 +173,7 @@ export default function Chat() {
         <div className={classes.toolbar} />
         <Container>
           <List>
-            {messages.map((message, index) => (
+            {messages.map((item, index) => (
               <Paper
                 key={index}
                 direction="column"
@@ -188,14 +185,14 @@ export default function Chat() {
                     <Avatar>W</Avatar>
                   </Grid>
                   <Grid item xs>
-                    <Typography style={{ color: "#" + message.color }}>
-                      {message.nickname}
+                    <Typography style={{ color: "#" + item.color }}>
+                      {item.nickname}
                     </Typography>
-                    <Typography style={{ color: "#" + message.color }}>
-                      {message.message}
+                    <Typography style={{ color: "#" + item.color }}>
+                      {item.message}
                     </Typography>
                     <Typography style={{ wordBreak: "break-word" }}>
-                      {message.createdAt}
+                      {item.createdAt}
                     </Typography>
                   </Grid>
                 </Grid>

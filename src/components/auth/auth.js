@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Avatar from "@material-ui/core/Avatar";
 import Button from "@material-ui/core/Button";
 import CssBaseline from "@material-ui/core/CssBaseline";
@@ -8,6 +8,7 @@ import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
 import Container from "@material-ui/core/Container";
+import * as axios from "axios";
 
 function Copyright() {
   return (
@@ -45,6 +46,26 @@ const useStyles = makeStyles((theme) => ({
 export default function SignIn() {
   const classes = useStyles();
 
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleSubmit() {
+    axios({
+      method: "post",
+      url: "http://localhost:3001/auth/login",
+      data: {
+        nickname: "dimo4ka",
+        password: "1111",
+      },
+    })
+      .catch((error) => {
+        console.log(error);
+      })
+      .then((response) => {
+        console.log(response);
+      });
+  }
+
   return (
     <Container component="main" maxWidth="xs">
       <CssBaseline />
@@ -53,7 +74,7 @@ export default function SignIn() {
         <Typography component="h1" variant="h5">
           Sign in
         </Typography>
-        <form className={classes.form} noValidate>
+        <form className={classes.form}>
           <TextField
             variant="outlined"
             margin="normal"
@@ -64,6 +85,8 @@ export default function SignIn() {
             name="login"
             autoComplete="login"
             autoFocus
+            onChange={(e) => setLogin(e.target.value)}
+            value={login}
           />
           <TextField
             variant="outlined"
@@ -75,6 +98,8 @@ export default function SignIn() {
             type="password"
             id="password"
             autoComplete="current-password"
+            onChange={(e) => setPassword(e.target.value)}
+            value={password}
           />
           <Button
             type="submit"
@@ -82,6 +107,7 @@ export default function SignIn() {
             variant="contained"
             color="primary"
             className={classes.submit}
+            onClick={handleSubmit()}
           >
             Sign In
           </Button>

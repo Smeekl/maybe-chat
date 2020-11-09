@@ -8,7 +8,7 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path="/" component={Auth} />
+        <Route exact path="/auth" component={Auth} />
         <Route exact path="/chat" component={Chat} />
       </Switch>
     </Router>
