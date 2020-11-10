@@ -29,23 +29,28 @@ import TextField from "@material-ui/core/TextField";
 const ENDPOINT = "http://localhost:3001";
 const socket = socketIOClient(ENDPOINT, { origins: "*:*" });
 
-const drawerWidth = 240;
+const drawerWidth = 25;
+const headerHeight = 64;
+const footerHeight = 110;
 
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
   },
   appBar: {
+    height: `${headerHeight}px`,
     zIndex: theme.zIndex.drawer + 1,
     marginRight: 0,
     backgroundColor: "#2c3e50",
   },
   drawer: {
-    width: drawerWidth,
+    minWidth: "200px",
+    width: `${drawerWidth}%`,
     flexShrink: 0,
   },
   drawerPaper: {
-    width: drawerWidth,
+    minWidth: "200px",
+    width: `${drawerWidth}%`,
   },
   toolbar: theme.mixins.toolbar,
   content: {
@@ -67,15 +72,10 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(2),
   },
   messagePaper: {
-    maxWidth: 600,
-    margin: `5px`,
+    textAlign: "end",
+    width: "calc(100% - 50%)",
+    marginTop: `7px`,
     padding: theme.spacing(2),
-  },
-  footer: {
-    width: "70%",
-    position: "fixed",
-    zIndex: 1,
-    top: "90%",
   },
   black: {
     color: "white",
@@ -92,6 +92,32 @@ const useStyles = makeStyles((theme) => ({
   userAvatar: {
     marginRight: "5px",
   },
+  userNickname: {
+    textAlign: "right",
+  },
+  messages: {
+    scrollbarWidth: "none",
+    height: `calc(100vh - ${headerHeight}px - ${footerHeight}px)`,
+    overflowY: "auto",
+    paddingBottom: "10px",
+  },
+  logo: {
+    width: "50%",
+    display: "flex",
+    alignItems: "center",
+  },
+  headerToolbar: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  messageBody: {
+    display: "flex",
+    justifyContent: "flex-start",
+  },
+  messageJustify: {
+    display: "flex",
+    justifyContent: "flex-end",
+  },
 }));
 const theme = createMuiTheme({
   typography: {
@@ -107,23 +133,40 @@ export default function Chat() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([Object]);
   const [usersOnline, setUsersOnline] = useState(0);
-  const [userInfo, setUserInfo] = useState([]);
+  const [usersInfo, setUsersInfo] = useState([Object]);
+  const [userInfo, setUserInfo] = useState({});
 
-  const handleSendMessage = (e) => {
-    socket.emit("sendMessage", { userId: 1, message: message });
+  const sendMessage = (e) => {
+    socket.emit("sendMessage", { userId: userInfo.id, message: message });
     socket.emit("getMessages");
+    setMessage("");
   };
 
-
   useEffect(() => {
+    console.log(localStorage.getItem("token"));
+    //async await
+    socket.emit("authorize", localStorage.getItem("token"));
+    socket.on("authorize", (payload) => {
+      if (payload.statusCode === 401) {
+        window.location.href = "/auth";
+      }
+    });
+
     socket.emit("getOnlineUsersCount");
     socket.on("getOnlineUsersCount", (payload) => {
       setUsersOnline(payload);
     });
 
+    socket.emit("getUserInfo");
+    socket.on("getUserInfo", (payload) => {
+      console.log("CURR USER", payload);
+      setUserInfo(payload);
+    });
+
     socket.emit("getUsersInfo");
     socket.on("getUsersInfo", (payload) => {
-      setUserInfo(payload);
+      console.log(payload);
+      setUsersInfo(payload);
     });
 
     socket.emit("getMessages");
@@ -134,9 +177,9 @@ export default function Chat() {
 
   useEffect(() => {
     socket.on("getUsersInfo", (payload) => {
-      setUserInfo(payload);
+      setUsersInfo(payload);
     });
-  }, [userInfo]);
+  }, [usersInfo]);
 
   useEffect(() => {
     socket.on("getMessages", (payload) => {
@@ -154,74 +197,87 @@ export default function Chat() {
     <div className={classes.root}>
       <CssBaseline />
       <AppBar position="fixed" className={classes.appBar}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            className={classes.menuButton}
-            color="inherit"
-            aria-label="menu"
-          >
-            <MenuIcon />
-          </IconButton>
+        <Toolbar className={classes.headerToolbar}>
+          <div className={classes.logo}>
+            <IconButton
+              edge="start"
+              className={classes.menuButton}
+              color="inherit"
+              aria-label="menu"
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap>
+              <span className={classes.black}>Maybe.</span>
+              <span className={classes.orange}>Chat</span>
+            </Typography>
+          </div>
           <Typography variant="h6" noWrap>
-            <span className={classes.black}>Maybe.</span>
-            <span className={classes.orange}>Chat</span>
+            <span className={classes.userNickname}>{userInfo.nickname}</span>
           </Typography>
         </Toolbar>
       </AppBar>
       <main className={classes.content}>
         <div className={classes.toolbar} />
         <Container>
-          <List>
+          <List className={classes.messages}>
             {messages.map((item, index) => (
-              <Paper
-                key={index}
-                direction="column"
-                justify="space-around"
-                className={classes.messagePaper}
+              <div
+                className={
+                  userInfo.nickname === item.nickname
+                    ? classes.messageJustify
+                    : classes.messageBody
+                }
               >
-                <Grid container wrap="nowrap">
-                  <Grid className={classes.userAvatar}>
-                    <Avatar>W</Avatar>
+                <Paper
+                  key={index}
+                  direction="column"
+                  justify="space-around"
+                  className={classes.messagePaper}
+                >
+                  <Grid container wrap="nowrap">
+                    <Grid className={classes.userAvatar}>
+                      <Avatar>W</Avatar>
+                    </Grid>
+                    <Grid item xs>
+                      <Typography style={{ color: "#" + item.color }}>
+                        {item.nickname}
+                      </Typography>
+                      <Typography style={{ color: "#" + item.color }}>
+                        {item.message}
+                      </Typography>
+                      <Typography style={{ wordBreak: "break-word" }}>
+                        {item.createdAt}
+                      </Typography>
+                    </Grid>
                   </Grid>
-                  <Grid item xs>
-                    <Typography style={{ color: "#" + item.color }}>
-                      {item.nickname}
-                    </Typography>
-                    <Typography style={{ color: "#" + item.color }}>
-                      {item.message}
-                    </Typography>
-                    <Typography style={{ wordBreak: "break-word" }}>
-                      {item.createdAt}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Paper>
+                </Paper>
+              </div>
             ))}
           </List>
-          <footer className={classes.footer}>
-            <Container maxWidth="sm">
-              <form className={classes.root} noValidate autoComplete="off">
-                <TextField
-                  onChange={(e) => setMessage(e.target.value)}
-                  multiline
-                  className={classes.textInput}
-                  color="secondary"
-                  rowsMax={4}
-                  placeholder="Write a message..."
-                  value={message}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  color="primary"
-                  className={classes.button}
-                >
-                  Send
-                </Button>
-              </form>
-            </Container>
-          </footer>
         </Container>
+        <footer className={classes.footer}>
+          <Container maxWidth="sm">
+            <form className={classes.root} noValidate autoComplete="off">
+              <TextField
+                onChange={(e) => setMessage(e.target.value)}
+                multiline
+                className={classes.textInput}
+                color="secondary"
+                rowsMax={2}
+                placeholder="Write a message..."
+                value={message}
+              />
+              <Button
+                onClick={sendMessage}
+                color="primary"
+                className={classes.button}
+              >
+                Send
+              </Button>
+            </form>
+          </Container>
+        </footer>
       </main>
       <Drawer
         className={classes.drawer}
@@ -243,8 +299,8 @@ export default function Chat() {
         </List>
         <Divider />
         <List>
-          {userInfo.map((text, index) => (
-            <ListItem key={text}>
+          {usersInfo.map((text, index) => (
+            <ListItem key={index}>
               <ListItemIcon>
                 <ThemeProvider theme={theme}>
                   <Badge color="secondary" variant="dot">
@@ -252,7 +308,7 @@ export default function Chat() {
                   </Badge>
                 </ThemeProvider>
               </ListItemIcon>
-              <ListItemText primary={text} />
+              <ListItemText primary={text.nickname} />
             </ListItem>
           ))}
         </List>
