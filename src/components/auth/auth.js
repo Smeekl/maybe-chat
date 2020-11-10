@@ -52,19 +52,28 @@ export default function SignIn() {
   function handleSubmit() {
     axios({
       method: "post",
-      url: "http://localhost:3001/auth/login",
+        url: "http://localhost:3001/auth/login",
       data: {
         nickname: "dimo4ka",
         password: "1111",
       },
     })
-      .catch((error) => {
-        console.log(error);
+      .then((response)=>{
+        if (response.data.statusCode === 401){
+          return Promise.reject(response.data.statusCode);
+        }
+        return response
       })
       .then((response) => {
-        console.log(response);
-      });
+        localStorage.setItem('token', response.data)
+      })
+        .then(()=>{
+          window.location.href = '/chat';
+        });
   }
+
+  {
+    console.log(localStorage.getItem('token'));}
 
   return (
     <Container component="main" maxWidth="xs">

@@ -114,6 +114,7 @@ export default function Chat() {
     socket.emit("getMessages");
   };
 
+
   useEffect(() => {
     socket.emit("getOnlineUsersCount");
     socket.on("getOnlineUsersCount", (payload) => {
@@ -127,7 +128,6 @@ export default function Chat() {
 
     socket.emit("getMessages");
     socket.on("getMessages", (payload) => {
-      console.log(payload);
       setMessages(payload);
     });
   }, []);
