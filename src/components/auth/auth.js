@@ -9,6 +9,7 @@ import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
 import Container from "@material-ui/core/Container";
 import * as axios from "axios";
+import { red } from "@material-ui/core/colors";
 
 function Copyright() {
   return (
@@ -48,29 +49,32 @@ export default function SignIn() {
 
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  function handleSubmit() {
-    axios({
-      method: "post",
-      url: "http://localhost:3001/auth/login",
-      data: {
-        nickname: login,
-        password: password,
-      },
-    })
-      .then((response) => {
-        if (response.data.statusCode === 401) {
-          return Promise.reject(response.data.statusCode);
-        }
-        return response;
-      })
-      .then((response) => {
-        localStorage.setItem("token", response.data);
-      })
-      .then(() => {
-        window.location.href = "/chat";
+  const handleSubmit = async (event) => {
+    setErrorMessage("");
+    event.preventDefault();
+
+    try {
+      const { data } = await axios.request({
+        method: "POST",
+        url: "http://localhost:3001/auth/login",
+        data: {
+          nickname: login,
+          password: password,
+        },
       });
-  }
+
+      localStorage.setItem("token", data);
+      window.location.href = "/chat";
+    } catch (error) {
+      const {
+        data: { message = "Error" },
+      } = error.response;
+
+      setErrorMessage(message);
+    }
+  };
 
   return (
     <Container component="main" maxWidth="xs">
@@ -107,15 +111,18 @@ export default function SignIn() {
             onChange={(e) => setPassword(e.target.value)}
             value={password}
           />
+          {errorMessage && (
+            <Typography component="h1" variant="h5" color="error">
+              {errorMessage}
+            </Typography>
+          )}
           <Button
-            type="submit"
+            type="button"
             fullWidth
             variant="contained"
             color="primary"
             className={classes.submit}
-            onClick={() => {
-              handleSubmit();
-            }}
+            onClick={handleSubmit}
           >
             Sign In
           </Button>

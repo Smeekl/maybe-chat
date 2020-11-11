@@ -1,4 +1,3 @@
-import { makeStyles } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import AppBar from "@material-ui/core/AppBar";
@@ -10,12 +9,7 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
 import GroupIcon from "@material-ui/icons/Group";
-import AccountCircleIcon from "@material-ui/icons/AccountCircle";
-import Badge from "@material-ui/core/Badge";
-import { green } from "@material-ui/core/colors";
-import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
-import { ThemeProvider } from "@material-ui/styles";
-import React, { useState, useEffect } from "react";
+import React, { useState, useLayoutEffect } from "react";
 import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import { Container } from "@material-ui/core";
@@ -25,173 +19,74 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Avatar from "@material-ui/core/Avatar";
 import TextField from "@material-ui/core/TextField";
+import { useStyles } from "./styles";
+import UsersList from "./usersList";
 
 const ENDPOINT = "http://localhost:3001";
-const socket = socketIOClient(ENDPOINT, { origins: "*:*" });
-
-const drawerWidth = 25;
-const headerHeight = 64;
-const footerHeight = 110;
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: "flex",
-  },
-  appBar: {
-    height: `${headerHeight}px`,
-    zIndex: theme.zIndex.drawer + 1,
-    marginRight: 0,
-    backgroundColor: "#2c3e50",
-  },
-  drawer: {
-    minWidth: "200px",
-    width: `${drawerWidth}%`,
-    flexShrink: 0,
-  },
-  drawerPaper: {
-    minWidth: "200px",
-    width: `${drawerWidth}%`,
-  },
-  toolbar: theme.mixins.toolbar,
-  content: {
-    flexGrow: 1,
-    backgroundColor: theme.palette.background.default,
-    padding: theme.spacing(3),
-  },
-  menuButton: {
-    marginRight: theme.spacing(2),
-  },
-  title: {
-    flexGrow: 1,
-  },
-  button: {
-    color: "black",
-    margin: theme.spacing(1),
-  },
-  message: {
-    marginTop: theme.spacing(2),
-  },
-  messagePaper: {
-    textAlign: "end",
-    width: "calc(100% - 50%)",
-    marginTop: `7px`,
-    padding: theme.spacing(2),
-  },
-  black: {
-    color: "white",
-    fontFamily: theme.typography.fontFamily,
-  },
-  orange: {
-    color: "orange",
-    fontFamily: theme.typography.fontFamily,
-  },
-  textInput: {
-    marginTop: "2px",
-    width: "100%",
-  },
-  userAvatar: {
-    marginRight: "5px",
-  },
-  userNickname: {
-    textAlign: "right",
-  },
-  messages: {
-    scrollbarWidth: "none",
-    height: `calc(100vh - ${headerHeight}px - ${footerHeight}px)`,
-    overflowY: "auto",
-    paddingBottom: "10px",
-  },
-  logo: {
-    width: "50%",
-    display: "flex",
-    alignItems: "center",
-  },
-  headerToolbar: {
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  messageBody: {
-    display: "flex",
-    justifyContent: "flex-start",
-  },
-  messageJustify: {
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-}));
-const theme = createMuiTheme({
-  typography: {
-    fontFamily: ["Balsamiq Sans"].join(","),
-  },
-  palette: {
-    secondary: green,
-  },
+const socket = socketIOClient(ENDPOINT, {
+  origins: "*:*",
+  query: `token=${localStorage.getItem("token")}`,
 });
 
 export default function Chat() {
   const classes = useStyles();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([Object]);
-  const [usersOnline, setUsersOnline] = useState(0);
-  const [usersInfo, setUsersInfo] = useState([Object]);
-  const [userInfo, setUserInfo] = useState({});
+  const [currentUser, setCurrentUser] = useState({});
+  const [usersOnline, setUsersOnline] = useState([Object]);
+  const [allUsers, setAllUsers] = useState([Object]);
+  const [isMuted, setIsMuted] = useState(false);
 
   const sendMessage = (e) => {
-    socket.emit("sendMessage", { userId: userInfo.id, message: message });
-    socket.emit("getMessages");
+    socket.emit("sendMessage", { userId: currentUser.id, message: message });
     setMessage("");
   };
 
-  useEffect(() => {
-    console.log(localStorage.getItem("token"));
-    //async await
-    socket.emit("authorize", localStorage.getItem("token"));
-    socket.on("authorize", (payload) => {
-      if (payload.statusCode === 401) {
-        window.location.href = "/auth";
-      }
-    });
+  const leave = () => {};
 
-    socket.emit("getOnlineUsersCount");
-    socket.on("getOnlineUsersCount", (payload) => {
-      setUsersOnline(payload);
+  const ban = (userId) => {
+    socket.emit("checkBanStatus", localStorage.getItem("token"));
+    socket.emit("ban", {
+      userId,
     });
+  };
 
-    socket.emit("getUserInfo");
-    socket.on("getUserInfo", (payload) => {
-      console.log("CURR USER", payload);
-      setUserInfo(payload);
+  const unban = (actionUser, currentUser) => {
+    socket.emit("checkBanStatus", localStorage.getItem("token"));
+    socket.emit("unban", {
+      currentUserId: currentUser,
+      actionUserId: actionUser,
     });
+  };
 
-    socket.emit("getUsersInfo");
-    socket.on("getUsersInfo", (payload) => {
-      console.log(payload);
-      setUsersInfo(payload);
+  const mute = (actionUser, currentUser) => {
+    socket.emit("checkBanStatus", localStorage.getItem("token"));
+    socket.emit("mute", {
+      currentUserId: currentUser,
+      actionUserId: actionUser,
     });
+  };
 
-    socket.emit("getMessages");
-    socket.on("getMessages", (payload) => {
-      setMessages(payload);
+  const authRedirect = () => {
+    window.location.href = "/auth";
+    localStorage.removeItem("token");
+  };
+
+  const unmute = (actionUser, currentUser) => {
+    socket.emit("checkBanStatus", localStorage.getItem("token"));
+    socket.emit("unmute", {
+      currentUserId: currentUser,
+      actionUserId: actionUser,
     });
+  };
+
+  useLayoutEffect(() => {
+    socket.on("ban", authRedirect);
+    socket.on("currentUser", setCurrentUser);
+    socket.on("onlineUsers", setUsersOnline);
+    socket.on("getMessages", setMessages);
+    socket.on("getAllUsers", setAllUsers);
   }, []);
-
-  useEffect(() => {
-    socket.on("getUsersInfo", (payload) => {
-      setUsersInfo(payload);
-    });
-  }, [usersInfo]);
-
-  useEffect(() => {
-    socket.on("getMessages", (payload) => {
-      setMessages(payload);
-    });
-  }, [messages]);
-
-  useEffect(() => {
-    socket.on("getOnlineUsersCount", (payload) => {
-      setUsersOnline(payload);
-    });
-  });
 
   return (
     <div className={classes.root}>
@@ -212,19 +107,27 @@ export default function Chat() {
               <span className={classes.orange}>Chat</span>
             </Typography>
           </div>
-          <Typography variant="h6" noWrap>
-            <span className={classes.userNickname}>{userInfo.nickname}</span>
-          </Typography>
+          <div>
+            <Typography variant="h6" noWrap>
+              <span className={classes.userNickname}>
+                {currentUser.nickname}
+              </span>
+            </Typography>
+            <Button variant="outlined" onClick={leave}>
+              Leave room...
+            </Button>
+          </div>
         </Toolbar>
       </AppBar>
       <main className={classes.content}>
         <div className={classes.toolbar} />
         <Container>
           <List className={classes.messages}>
-            {messages.map((item, index) => (
+            {messages.map((message, index) => (
               <div
+                key={index}
                 className={
-                  userInfo.nickname === item.nickname
+                  currentUser.nickname === message.nickname
                     ? classes.messageJustify
                     : classes.messageBody
                 }
@@ -240,14 +143,14 @@ export default function Chat() {
                       <Avatar>W</Avatar>
                     </Grid>
                     <Grid item xs>
-                      <Typography style={{ color: "#" + item.color }}>
-                        {item.nickname}
+                      <Typography style={{ color: "#" + message.color }}>
+                        {message.nickname}
                       </Typography>
-                      <Typography style={{ color: "#" + item.color }}>
-                        {item.message}
+                      <Typography style={{ color: "#" + message.color }}>
+                        {message.message}
                       </Typography>
                       <Typography style={{ wordBreak: "break-word" }}>
-                        {item.createdAt}
+                        {message.createdAt}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -294,23 +197,13 @@ export default function Chat() {
             <ListItemIcon>
               <GroupIcon />
             </ListItemIcon>
-            <ListItemText primary={"Users Online: " + usersOnline} />
+            <ListItemText primary={"Users Online: " + usersOnline.length} />
           </ListItem>
         </List>
         <Divider />
         <List>
-          {usersInfo.map((text, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <ThemeProvider theme={theme}>
-                  <Badge color="secondary" variant="dot">
-                    <AccountCircleIcon />
-                  </Badge>
-                </ThemeProvider>
-              </ListItemIcon>
-              <ListItemText primary={text.nickname} />
-            </ListItem>
-          ))}
+          {currentUser.isAdmin && <UsersList usersOnline={allUsers} />}
+          {!currentUser.isAdmin && <UsersList usersOnline={usersOnline} />}
         </List>
       </Drawer>
     </div>
