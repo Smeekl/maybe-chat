@@ -112,7 +112,7 @@ export default function SignIn() {
             value={password}
           />
           {errorMessage && (
-            <Typography component="h1" variant="h5" color="error">
+            <Typography component="h6" variant="h6" color="error">
               {errorMessage}
             </Typography>
           )}

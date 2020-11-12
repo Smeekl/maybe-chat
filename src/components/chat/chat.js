@@ -20,7 +20,12 @@ import Grid from "@material-ui/core/Grid";
 import Avatar from "@material-ui/core/Avatar";
 import TextField from "@material-ui/core/TextField";
 import { useStyles } from "./styles";
-import UsersList from "./usersList";
+import { ThemeProvider } from "@material-ui/styles";
+import { theme } from "./theme";
+import Badge from "@material-ui/core/Badge";
+import AccountCircleIcon from "@material-ui/icons/AccountCircle";
+import ButtonGroup from "@material-ui/core/ButtonGroup";
+import * as md5 from "md5";
 
 const ENDPOINT = "http://localhost:3001";
 const socket = socketIOClient(ENDPOINT, {
@@ -31,10 +36,10 @@ const socket = socketIOClient(ENDPOINT, {
 export default function Chat() {
   const classes = useStyles();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([Object]);
+  const [messages, setMessages] = useState([]);
   const [currentUser, setCurrentUser] = useState({});
-  const [usersOnline, setUsersOnline] = useState([Object]);
-  const [allUsers, setAllUsers] = useState([Object]);
+  const [usersOnline, setUsersOnline] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
 
   const sendMessage = (e) => {
@@ -42,29 +47,26 @@ export default function Chat() {
     setMessage("");
   };
 
-  const leave = () => {};
-
   const ban = (userId) => {
-    socket.emit("checkBanStatus", localStorage.getItem("token"));
     socket.emit("ban", {
       userId,
     });
   };
 
-  const unban = (actionUser, currentUser) => {
-    socket.emit("checkBanStatus", localStorage.getItem("token"));
+  const unban = (userId) => {
     socket.emit("unban", {
-      currentUserId: currentUser,
-      actionUserId: actionUser,
+      userId,
     });
   };
 
-  const mute = (actionUser, currentUser) => {
-    socket.emit("checkBanStatus", localStorage.getItem("token"));
+  const mute = (userId) => {
     socket.emit("mute", {
-      currentUserId: currentUser,
-      actionUserId: actionUser,
+      userId,
     });
+  };
+
+  const gravatarImage = (nickname) => {
+    return `https://www.gravatar.com/avatar/${md5(nickname)}?d=robohash`;
   };
 
   const authRedirect = () => {
@@ -72,20 +74,20 @@ export default function Chat() {
     localStorage.removeItem("token");
   };
 
-  const unmute = (actionUser, currentUser) => {
-    socket.emit("checkBanStatus", localStorage.getItem("token"));
+  const unmute = (userId) => {
     socket.emit("unmute", {
-      currentUserId: currentUser,
-      actionUserId: actionUser,
+      userId,
     });
   };
 
   useLayoutEffect(() => {
     socket.on("ban", authRedirect);
+    socket.on("mute", setIsMuted);
+    socket.on("unmute", setIsMuted);
     socket.on("currentUser", setCurrentUser);
     socket.on("onlineUsers", setUsersOnline);
-    socket.on("getMessages", setMessages);
-    socket.on("getAllUsers", setAllUsers);
+    socket.on("messages", setMessages);
+    socket.on("allUsers", setAllUsers);
   }, []);
 
   return (
@@ -112,10 +114,10 @@ export default function Chat() {
               <span className={classes.userNickname}>
                 {currentUser.nickname}
               </span>
+              <Button variant="outlined" onClick={authRedirect}>
+                Leave room...
+              </Button>
             </Typography>
-            <Button variant="outlined" onClick={leave}>
-              Leave room...
-            </Button>
           </div>
         </Toolbar>
       </AppBar>
@@ -132,6 +134,18 @@ export default function Chat() {
                     : classes.messageBody
                 }
               >
+                <div className={classes.avatarNickname}>
+                  <Avatar
+                    alt={message.nickname}
+                    src={gravatarImage(message.nickname)}
+                  />
+                  <Typography
+                    variant="h6"
+                    style={{ color: "#" + message.color }}
+                  >
+                    {message.nickname}
+                  </Typography>
+                </div>
                 <Paper
                   key={index}
                   direction="column"
@@ -139,17 +153,14 @@ export default function Chat() {
                   className={classes.messagePaper}
                 >
                   <Grid container wrap="nowrap">
-                    <Grid className={classes.userAvatar}>
-                      <Avatar>W</Avatar>
-                    </Grid>
                     <Grid item xs>
-                      <Typography style={{ color: "#" + message.color }}>
-                        {message.nickname}
-                      </Typography>
-                      <Typography style={{ color: "#" + message.color }}>
+                      <Typography
+                        className={classes.messageSize}
+                        style={{ color: "#" + message.color }}
+                      >
                         {message.message}
                       </Typography>
-                      <Typography style={{ wordBreak: "break-word" }}>
+                      <Typography className={classes.messageTime}>
                         {message.createdAt}
                       </Typography>
                     </Grid>
@@ -172,6 +183,7 @@ export default function Chat() {
                 value={message}
               />
               <Button
+                disabled={isMuted}
                 onClick={sendMessage}
                 color="primary"
                 className={classes.button}
@@ -202,8 +214,73 @@ export default function Chat() {
         </List>
         <Divider />
         <List>
-          {currentUser.isAdmin && <UsersList usersOnline={allUsers} />}
-          {!currentUser.isAdmin && <UsersList usersOnline={usersOnline} />}
+          {/*{currentUser.isAdmin && <UsersList usersOnline={allUsers} />}*/}
+          {/*{!currentUser.isAdmin && <UsersList usersOnline={usersOnline} />}*/}
+          <div>
+            {currentUser.isAdmin
+              ? allUsers.map((user, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <ThemeProvider theme={theme}>
+                        <Badge color="secondary">
+                          <Avatar
+                            alt={user.nickname}
+                            src={gravatarImage(user.nickname)}
+                          />
+                        </Badge>
+                      </ThemeProvider>
+                    </ListItemIcon>
+                    <ListItemText primary={user.nickname} />
+                    {currentUser.isAdmin && user.id !== currentUser.id && (
+                      <ButtonGroup
+                        size="small"
+                        aria-label="small outlined button group"
+                      >
+                        <Button onClick={() => ban(user.id)}>Ban</Button>
+                        <Button onClick={() => unban(user.id, currentUser.id)}>
+                          Unban
+                        </Button>
+                        <Button onClick={() => mute(user.id, currentUser.id)}>
+                          Mute
+                        </Button>
+                        <Button onClick={() => unmute(user.id, currentUser.id)}>
+                          Unmute
+                        </Button>
+                      </ButtonGroup>
+                    )}
+                  </ListItem>
+                ))
+              : usersOnline.map((user, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <ThemeProvider theme={theme}>
+                        <Avatar
+                          alt={user.nickname}
+                          src={gravatarImage(user.nickname)}
+                        />
+                      </ThemeProvider>
+                    </ListItemIcon>
+                    <ListItemText primary={user.nickname} />
+                    {currentUser.isAdmin && user.id !== currentUser.id && (
+                      <ButtonGroup
+                        size="small"
+                        aria-label="small outlined button group"
+                      >
+                        <Button onClick={() => ban(user.id)}>Ban</Button>
+                        <Button onClick={() => unban(user.id, currentUser.id)}>
+                          Unban
+                        </Button>
+                        <Button onClick={() => mute(user.id, currentUser.id)}>
+                          Mute
+                        </Button>
+                        <Button onClick={() => unmute(user.id, currentUser.id)}>
+                          Unmute
+                        </Button>
+                      </ButtonGroup>
+                    )}
+                  </ListItem>
+                ))}
+          </div>
         </List>
       </Drawer>
     </div>

@@ -43,8 +43,7 @@ export const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(2),
   },
   messagePaper: {
-    textAlign: "end",
-    width: "calc(100% - 50%)",
+    textAlign: "inherit",
     marginTop: `7px`,
     padding: theme.spacing(2),
   },
@@ -65,6 +64,7 @@ export const useStyles = makeStyles((theme) => ({
   },
   userNickname: {
     textAlign: "right",
+    marginRight: "15px",
   },
   messages: {
     scrollbarWidth: "none",
@@ -88,5 +88,17 @@ export const useStyles = makeStyles((theme) => ({
   messageJustify: {
     display: "flex",
     justifyContent: "flex-end",
+  },
+  messageSize: {
+    marginBottom: "15px",
+    fontSize: "18px",
+  },
+  messageTime: {
+    fontSize: "12px",
+    textAlign: "end",
+  },
+  avatarNickname: {
+    marginRight: "7px",
+    alignSelf: "center",
   },
 }));
